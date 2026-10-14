@@ -4,10 +4,10 @@ from typing import Literal
 from pydantic import EmailStr
 from sqlalchemy.orm import foreign
 from sqlalchemy.orm.relationships import _RelationshipDeclared
-from sqlmodel import ARRAY, Column, Field, Relationship, SQLModel, String, JSON, UniqueConstraint, table, Enum
+from sqlmodel import ARRAY, Column, Field, PrimaryKeyConstraint, Relationship, SQLModel, String, JSON, UniqueConstraint, table, Enum
 import uuid
 
-from enums import RespostasCartasEnum, StatusProgramacoesSemanaisEnum, StatusUsuario, TipoUsuarioEnum
+from .enums import RespostasCartasEnum, StatusProgramacoesSemanaisEnum, StatusUsuario, TipoUsuarioEnum
 
 
 
@@ -86,7 +86,7 @@ class Cartas(SQLModel, table=True):
 class ProgramacoesCartas(SQLModel, table=True):
     __tablename__ = "programacoes_cartas"
     __table_args__ = (
-        UniqueConstraint("programacao_id", "carta_id")
+        UniqueConstraint("programacao_id", "carta_id"),
     )
     id : int = Field(default=None, primary_key=True)
     
@@ -160,7 +160,7 @@ class RespostasCartas(SQLModel, table=True):
     )
     respondida_em : datetime = Field()
 
-    programacao_carta_id : int = Field(foreign_key="programacao_cartas.id", unique=True)
+    programacao_carta_id : int = Field(foreign_key="programacoes_cartas.id", unique=True)
     paciente_id : int = Field(foreign_key="perfis_pacientes.id")
 
     programacao_carta : ProgramacoesCartas = Relationship(back_populates="respostas_cartas")
@@ -192,6 +192,12 @@ class Etiquetas(SQLModel, table=True):
 
 class CartasEtiquetas(SQLModel, table=True):
     __tablename__ = "cartas_etiquetas"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "carta_id",
+            "etiqueta_id"
+        ),
+    )
     
     carta_id : int = Field(foreign_key="cartas.id", index=True)
     etiqueta_id : int = Field(foreign_key="etiquetas.id", index=True)
