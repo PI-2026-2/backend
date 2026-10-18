@@ -4,6 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: PI6Backend
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /app
+          initial_sync: true
     ports:
       - ${BACKEND_PORT}:8000
     env_file: .env
