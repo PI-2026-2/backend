@@ -6,20 +6,22 @@ services:
     container_name: PI6Backend
     develop:
       watch:
-        - action: sync
+        - action: sync+restart
           path: ./app
           target: /app
           initial_sync: true
+        - action: rebuild
+          path: uv.lock
     ports:
       - ${BACKEND_PORT}:8000
     env_file: .env
     depends_on:
-      - postgres
+      - pi6-db
     networks:
       - frontend-network
       - backend-network
 
-  postgres:
+  pi6-db:
     image: postgres:16.4
     restart: always
     environment:
@@ -29,6 +31,8 @@ services:
       - pi6-db:/var/lib/postgresql/data
     ports:
       - ${POSTGRES_PORT}:5432
+    networks:
+      - backend-network
 
 volumes:
   pi6-db:

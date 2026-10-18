@@ -19,9 +19,9 @@ class Usuarios(SQLModel, table=True):
         sa_column=Column(Enum(TipoUsuarioEnum), nullable=False)
     )
 
-    terapeutas : list["PerfisTerapeutas"] = Relationship(back_populates="usuarios")
-    pacientes : list["PerfisPacientes"] = Relationship(back_populates="usuarios")
-    cartas_criadas : list["Cartas"] = Relationship(back_populates="usuarios")
+    terapeutas : list["PerfisTerapeutas"] = Relationship(back_populates="usuario")
+    pacientes : list["PerfisPacientes"] = Relationship(back_populates="usuario")
+    cartas_criadas : list["Cartas"] = Relationship(back_populates="usuario")
 
 class PerfisTerapeutas(SQLModel, table=True):
     __tablename__ = "perfis_terapeutas"
@@ -37,13 +37,13 @@ class PerfisTerapeutas(SQLModel, table=True):
     )
     usuario_id : int = Field(foreign_key="usuarios.id", unique=True)
 
-    usuario : Usuarios = Relationship(back_populates="perfis_terapeutas")
+    usuario : Usuarios = Relationship(back_populates="terapeutas")
 
-    pacientes : list["PerfisPacientes"] = Relationship(back_populates="perfis_terapeutas")
-    programacoes_semanais : list["ProgramacoesSemanais"] = Relationship(back_populates="perfis_terapeutas")
-    avaliacoes : list["AvaliacoesTerapeutas"] = Relationship(back_populates="perfis_terapeutas")
-    anotacoes : list["AnotacoesTerapeutas"] = Relationship(back_populates="perfis_terapeutas")
-    laudos_pacientes : list["LaudosPacientes"] = Relationship(back_populates="perfis_terapeutas")
+    pacientes : list["PerfisPacientes"] = Relationship(back_populates="terapeuta")
+    programacoes_semanais : list["ProgramacoesSemanais"] = Relationship(back_populates="terapeuta")
+    avaliacoes : list["AvaliacoesTerapeutas"] = Relationship(back_populates="terapeuta")
+    anotacoes : list["AnotacoesTerapeutas"] = Relationship(back_populates="terapeuta")
+    laudos_pacientes : list["LaudosPacientes"] = Relationship(back_populates="terapeuta")
 
 class PerfisPacientes(SQLModel, table=True):
     __tablename__ = "perfis_pacientes"
@@ -60,12 +60,13 @@ class PerfisPacientes(SQLModel, table=True):
     usuario_id : int = Field(foreign_key="usuarios.id", unique=True)
     terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id")
 
-    usuario : Usuarios = Relationship(back_populates="perfis_pacientes")
+    usuario : Usuarios = Relationship(back_populates="pacientes")
+    terapeuta : PerfisTerapeutas = Relationship(back_populates="pacientes")
 
-    programacoes_semanais : list["ProgramacoesSemanais"] = Relationship(back_populates="perfis_pacientes")
-    respostas_cartas : list["RespostasCartas"] = Relationship(back_populates="perfis_pacientes")
-    anotacoes_terapeutas : list["AnotacoesTerapeutas"] = Relationship(back_populates="perfis_pacientes")
-    laudos : list["LaudosPacientes"] = Relationship(back_populates="perfis_pacientes")
+    programacoes_semanais : list["ProgramacoesSemanais"] = Relationship(back_populates="paciente")
+    respostas_cartas : list["RespostasCartas"] = Relationship(back_populates="paciente")
+    anotacoes_terapeutas : list["AnotacoesTerapeutas"] = Relationship(back_populates="paciente")
+    laudos : list["LaudosPacientes"] = Relationship(back_populates="paciente")
 
     
 
@@ -77,7 +78,7 @@ class Cartas(SQLModel, table=True):
     
     criado_por_usuario_id : int = Field(foreign_key="usuarios.id")
 
-    usuario : Usuarios = Relationship(back_populates="cartas")
+    usuario : Usuarios = Relationship(back_populates="cartas_criadas")
 
     cartas_etiquetas : list["CartasEtiquetas"] = Relationship(back_populates="cartas")
     programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="cartas")
@@ -93,10 +94,10 @@ class ProgramacoesCartas(SQLModel, table=True):
     programacao_id : int = Field(foreign_key="programacoes_semanais.id", index=True)
     carta_id : int = Field(foreign_key="cartas.id", index=True)
 
-    programacao_semanal : ProgramacoesSemanais = Relationship(back_populates="programacoes_cartas")
-    carta : Cartas = Relationship(back_populates="programacoes_cartas")
+    programacao_semanal : ProgramacoesSemanais = Relationship(back_populates="programacao_cartas")
+    cartas : Cartas = Relationship(back_populates="programacao_cartas")
 
-    respostas_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="programacoes_cartas")
+    respostas_cartas : list["RespostasCartas"] = Relationship(back_populates="programacao_cartas")
     
 
 class AvaliacoesTerapeutas(SQLModel, table=True):
@@ -111,7 +112,7 @@ class AvaliacoesTerapeutas(SQLModel, table=True):
     terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id")
 
     resposta : RespostasCartas = Relationship(back_populates="avaliacoes_terapeutas")
-    terapeuta : PerfisTerapeutas = Relationship(back_populates="avaliacoes_terapeutas")
+    terapeuta : PerfisTerapeutas = Relationship(back_populates="avaliacoes")
 
 class ProgramacoesSemanais(SQLModel, table=True):
     __tablename__ = "programacoes_semanais"
@@ -133,7 +134,7 @@ class ProgramacoesSemanais(SQLModel, table=True):
     terapeuta : PerfisTerapeutas = Relationship(back_populates="programacoes_semanais")
     paciente : PerfisPacientes = Relationship(back_populates="programacoes_semanais")
 
-    programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="programacao_cartas")
+    programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="programacao_semanal")
     
 
 class AnotacoesTerapeutas(SQLModel, table=True):
@@ -147,7 +148,7 @@ class AnotacoesTerapeutas(SQLModel, table=True):
     terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id")
     paciente_id : int = Field(foreign_key="perfis_pacientes.id")
 
-    terapeuta : PerfisTerapeutas = Relationship(back_populates="anotacoes_terapeutas")
+    terapeuta : PerfisTerapeutas = Relationship(back_populates="anotacoes")
     paciente : PerfisPacientes = Relationship(back_populates="anotacoes_terapeutas")
 
 class RespostasCartas(SQLModel, table=True):
@@ -163,10 +164,10 @@ class RespostasCartas(SQLModel, table=True):
     programacao_carta_id : int = Field(foreign_key="programacoes_cartas.id", unique=True)
     paciente_id : int = Field(foreign_key="perfis_pacientes.id")
 
-    programacao_carta : ProgramacoesCartas = Relationship(back_populates="respostas_cartas")
+    programacao_cartas : ProgramacoesCartas = Relationship(back_populates="respostas_cartas")
     paciente : PerfisPacientes = Relationship(back_populates="respostas_cartas")
 
-    avaliacoes_terapeutas : list["AvaliacoesTerapeutas"] = Relationship(back_populates="respostas_cartas")
+    avaliacoes_terapeutas : list["AvaliacoesTerapeutas"] = Relationship(back_populates="resposta")
     
 
 class LaudosPacientes(SQLModel, table=True):
@@ -180,7 +181,7 @@ class LaudosPacientes(SQLModel, table=True):
     paciente_id : int = Field(foreign_key="perfis_pacientes.id")
     criado_por_terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id")
 
-    paciente : PerfisPacientes = Relationship(back_populates="laudos_pacientes")
+    paciente : PerfisPacientes = Relationship(back_populates="laudos")
     terapeuta : PerfisTerapeutas = Relationship(back_populates="laudos_pacientes")
     
 
@@ -202,5 +203,5 @@ class CartasEtiquetas(SQLModel, table=True):
     carta_id : int = Field(foreign_key="cartas.id", index=True)
     etiqueta_id : int = Field(foreign_key="etiquetas.id", index=True)
 
-    carta : Cartas = Relationship(back_populates="cartas_etiquetas")
-    etiqueta : Etiquetas = Relationship(back_populates="cartas_etiquetas")
+    cartas : Cartas = Relationship(back_populates="cartas_etiquetas")
+    etiquetas : Etiquetas = Relationship(back_populates="cartas_etiquetas")
