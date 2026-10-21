@@ -44,6 +44,7 @@ class PerfisTerapeutas(SQLModel, table=True):
     avaliacoes : list["AvaliacoesTerapeutas"] = Relationship(back_populates="terapeuta")
     anotacoes : list["AnotacoesTerapeutas"] = Relationship(back_populates="terapeuta")
     laudos_pacientes : list["LaudosPacientes"] = Relationship(back_populates="terapeuta")
+    mensagens : list["Mensagens"] = Relationship(back_populates="terapeuta")
 
 class PerfisPacientes(SQLModel, table=True):
     __tablename__ = "perfis_pacientes"
@@ -67,8 +68,7 @@ class PerfisPacientes(SQLModel, table=True):
     respostas_cartas : list["RespostasCartas"] = Relationship(back_populates="paciente")
     anotacoes_terapeutas : list["AnotacoesTerapeutas"] = Relationship(back_populates="paciente")
     laudos : list["LaudosPacientes"] = Relationship(back_populates="paciente")
-
-    
+    mensagens : list["Mensagens"] = Relationship(back_populates="paciente")
 
 class Cartas(SQLModel, table=True):
     id : int = Field(default=None, primary_key=True)
@@ -205,3 +205,19 @@ class CartasEtiquetas(SQLModel, table=True):
 
     cartas : Cartas = Relationship(back_populates="cartas_etiquetas")
     etiquetas : Etiquetas = Relationship(back_populates="cartas_etiquetas")
+
+class Mensagens(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint(
+            "paciente_id",
+            "terapeuta_id"
+        ),
+    )
+        
+    id : int = Field(default=None, primary_key=True)
+    mensagens : list[dict[Literal["actor","datetime","message"],str]] = Field(sa_column=Column(ARRAY(JSON)))
+    paciente_id  : int = Field(foreign_key="perfis_pacientes.id", index=True)
+    terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id", index=True)
+    paciente     : PerfisPacientes = Relationship(back_populates="mensagens")
+    terapeuta    : PerfisTerapeutas = Relationship(back_populates="mensagens")
+
