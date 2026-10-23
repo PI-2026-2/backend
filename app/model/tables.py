@@ -1,3 +1,4 @@
+# pyright: reportAssignmentType=false
 from datetime import date, datetime
 from operator import index
 from typing import Literal
@@ -79,9 +80,9 @@ class Cartas(SQLModel, table=True):
     criado_por_usuario_id : int = Field(foreign_key="usuarios.id")
 
     usuario : Usuarios = Relationship(back_populates="cartas_criadas")
-
-    cartas_etiquetas : list["CartasEtiquetas"] = Relationship(back_populates="cartas")
+    baralho_id : int  = Field(foreign_key="baralhos.id", index=True)
     programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="cartas")
+    baralho : Baralhos = Relationship(back_populates="cartas")
     
 
 class ProgramacoesCartas(SQLModel, table=True):
@@ -188,24 +189,17 @@ class LaudosPacientes(SQLModel, table=True):
 class Etiquetas(SQLModel, table=True):
     id : int = Field(default=None, primary_key=True)
     nome : str = Field(unique=True)
-    
-    cartas_etiquetas : CartasEtiquetas = Relationship(back_populates="etiquetas")
+    baralhos: list["Baralhos"] = Relationship(back_populates="etiqueta")
 
-class CartasEtiquetas(SQLModel, table=True):
-    __tablename__ = "cartas_etiquetas"
-    __table_args__ = (
-        PrimaryKeyConstraint(
-            "carta_id",
-            "etiqueta_id"
-        ),
-    )
-    
-    carta_id : int = Field(foreign_key="cartas.id", index=True)
+
+class Baralhos(SQLModel, table=True):
+    id : int = Field(default=None, primary_key=True)
+    nome : str = Field(unique=True)
     etiqueta_id : int = Field(foreign_key="etiquetas.id", index=True)
-
-    cartas : Cartas = Relationship(back_populates="cartas_etiquetas")
-    etiquetas : Etiquetas = Relationship(back_populates="cartas_etiquetas")
-
+    etiqueta : Etiquetas = Relationship(back_populates="baralhos")
+    cartas : list["Cartas"] = Relationship(back_populates="baralho")
+    
+    
 class Mensagens(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
@@ -220,4 +214,5 @@ class Mensagens(SQLModel, table=True):
     terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id", index=True)
     paciente     : PerfisPacientes = Relationship(back_populates="mensagens")
     terapeuta    : PerfisTerapeutas = Relationship(back_populates="mensagens")
+
 
