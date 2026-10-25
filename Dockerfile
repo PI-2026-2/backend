@@ -10,9 +10,12 @@ ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
 ENV UV_LINK_MODE=copy
 
-COPY . /app
+COPY uv.lock pyproject.toml .python-version /app
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
+
+COPY . /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
