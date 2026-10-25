@@ -1,11 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Tuple
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import select
 
 from app.database import SessionDep
-from app.model.Usuario import UsuarioCadastro, UsuarioLogin
+from app.model.Usuario import InformacoesUsuarioLogin, UsuarioCadastro, UsuarioLogin
 from app.model.enums import TipoUsuarioEnum
 from app.model.tables import Usuarios
 from dotenv import dotenv_values
@@ -33,6 +33,10 @@ class AuthService:
     def cadastrar(self, cadastro : UsuarioCadastro, session: SessionDep):
         try:
             usuario = Usuarios(
+                nome=cadastro.nome,
+                telefone=cadastro.telefone,
+                data_nascimento=cadastro.data_nascimento,
+                genero=cadastro.genero,
                 email= cadastro.email,
                 senha_hash= self.obter_hash_senha(cadastro.senha),
                 tipo=TipoUsuarioEnum(cadastro.tipo)
@@ -47,7 +51,7 @@ class AuthService:
 
     async def login_obter_token(
             self, form_data: Annotated[UsuarioLogin, Depends()], session : SessionDep,
-    ) -> Token:
+    ) -> Tuple[Token, InformacoesUsuarioLogin]:
         usuario = self.autenticar_usuario(form_data.email,form_data.senha, session)
         if not usuario:
             raise HTTPException(
@@ -59,7 +63,13 @@ class AuthService:
         access_token = self.criar_token(
             data={"sub": usuario.email}, expires_delta=access_token_expires
         )
-        return Token(access_token=access_token, token_type="bearer")
+        return (
+            Token(access_token=access_token, token_type="bearer"),
+            InformacoesUsuarioLogin(
+                nome_completo=usuario.nome,
+                tipo_usuario=self.obter_tipo_usuario(usuario)
+            )
+        )
 
     def verificar_senha(self, senha : str, hash_senha : str):
         return password_hash.verify(senha, hash_senha)
@@ -77,7 +87,7 @@ class AuthService:
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
 
-    async def obter_usuario_atual(self, token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep):
+    async def obter_usuario_atual(self, token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep) -> Usuarios:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             email = payload.get("sub")
@@ -98,6 +108,16 @@ class AuthService:
         if not self.verificar_senha(password, usuario.senha_hash):
             return False
         return usuario
+
+    def obter_tipo_usuario(self, usuario: Usuarios) -> TipoUsuarioEnum:
+        if usuario.terapeutas is not None and len(usuario.terapeutas) > 0:
+            return TipoUsuarioEnum.TERAPEUTA
+        else:
+            return TipoUsuarioEnum.PACIENTE
+        # elif usuario.pacientes is not None and len(usuario.pacientes) > 0:
+        #     return TipoUsuarioEnum.PACIENTE
+        # else:
+        #     raise Exception("O usuário não foi cadastrado corretamente")
 
 
 class Token(BaseModel):

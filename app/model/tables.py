@@ -14,6 +14,10 @@ from .enums import RespostasCartasEnum, StatusProgramacoesSemanaisEnum, StatusUs
 
 class Usuarios(SQLModel, table=True):
     id : int = Field(default=None, primary_key=True)
+    nome: str = Field()
+    telefone : str = Field()
+    data_nascimento : date = Field()
+    genero : str = Field()
     email : str = Field(unique=True)
     senha_hash : str = Field()
     tipo : TipoUsuarioEnum = Field(
@@ -28,11 +32,9 @@ class PerfisTerapeutas(SQLModel, table=True):
     __tablename__ = "perfis_terapeutas"
     
     id : int = Field(default=None, primary_key=True)
-    nome: str = Field()
     registro_profissional : str = Field()
     especialidade : str = Field()
     descricao : str = Field()
-    telefone : str = Field()
     status : StatusUsuario = Field(
         sa_column=Column(Enum(StatusUsuario), nullable=False)
     )
@@ -51,10 +53,6 @@ class PerfisPacientes(SQLModel, table=True):
     __tablename__ = "perfis_pacientes"
     
     id : int = Field(default=None, primary_key=True)
-    nome : str = Field()
-    telefone : str = Field()
-    data_nascimento : date = Field()
-    genero : str = Field()
     status : StatusUsuario = Field(
         sa_column=Column(Enum(StatusUsuario), nullable=False)
     )

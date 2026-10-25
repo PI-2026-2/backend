@@ -12,8 +12,8 @@ router = APIRouter(tags=["Autenticação"])
 
 @router.post("/login")
 async def login(login : UsuarioLogin, auth_service: Annotated[AuthService, Depends()], session: SessionDep):
-    token = await auth_service.login_obter_token(form_data=login, session=session)
-    return {"token": token}
+    token, informacoes_usuario = await auth_service.login_obter_token(form_data=login, session=session)
+    return {"token": token, "usuario": informacoes_usuario}
 
 
 @router.post("/cadastro")
