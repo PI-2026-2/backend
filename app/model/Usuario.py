@@ -19,5 +19,7 @@ class UsuarioLogin(BaseModel):
     senha : str
 
 class InformacoesUsuarioLogin(BaseModel):
+    id : int
+    email : str
     nome_completo : str
     tipo_usuario  : TipoUsuarioEnum 

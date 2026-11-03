@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Depends
 
 from app.database import SessionDep
 from app.model.Usuario import UsuarioCadastro, UsuarioLogin
@@ -19,6 +19,6 @@ async def login(login : UsuarioLogin, auth_service: Annotated[AuthService, Depen
 @router.post("/cadastro")
 async def cadastro(cadastro: UsuarioCadastro, auth_service: Annotated[AuthService, Depends()], session: SessionDep):
     resultado = auth_service.cadastrar(cadastro, session)
-    return {"cadastro" : resultado}
+    return {"cadastro": {"id": resultado.id, "nome": resultado.nome, "email": resultado.email, "tipo": resultado.tipo}}
 
     
