@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlmodel import Session, create_engine
 from .model.tables import *
 from .model.enums import *
+from .model.integration import *
 
 config = dotenv_values(".env")
 DATABASE_URL = config["DATABASE_URL"]

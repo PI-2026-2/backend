@@ -13,6 +13,7 @@ class UsuarioCadastro(BaseModel):
     data_nascimento: date
     genero: str
     tipo     : Literal["TERAPEUTA"] | Literal["PACIENTE"]
+    terapeuta_email: str | None = None
 
 class UsuarioLogin(BaseModel):
     email : str

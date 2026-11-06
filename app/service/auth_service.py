@@ -11,6 +11,7 @@ from app.database import SessionDep
 from app.model.Usuario import InformacoesUsuarioLogin, UsuarioCadastro, UsuarioLogin
 from app.model.enums import TipoUsuarioEnum
 from app.model.tables import Usuarios
+from app.model.integration import PatientLink
 from dotenv import dotenv_values
 from pwdlib import PasswordHash
 from fastapi.security import OAuth2PasswordBearer
@@ -45,6 +46,16 @@ class AuthService:
             )
         session.add(usuario)
         try:
+            session.flush()
+            if cadastro.tipo == "PACIENTE" and cadastro.terapeuta_email:
+                therapist = session.exec(select(Usuarios).where(
+                    Usuarios.email == cadastro.terapeuta_email.strip().lower(),
+                    Usuarios.tipo == TipoUsuarioEnum.TERAPEUTA,
+                )).first()
+                if therapist is None:
+                    session.rollback()
+                    raise HTTPException(status_code=404, detail="Terapeuta não encontrado")
+                session.add(PatientLink(patient_id=usuario.id, therapist_id=therapist.id))
             session.commit()
         except IntegrityError:
             session.rollback()

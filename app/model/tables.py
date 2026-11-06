@@ -80,7 +80,7 @@ class Cartas(SQLModel, table=True):
     usuario : Usuarios = Relationship(back_populates="cartas_criadas")
     baralho_id : int  = Field(foreign_key="baralhos.id", index=True)
     programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="cartas")
-    baralho : Baralhos = Relationship(back_populates="cartas")
+    baralho : "Baralhos" = Relationship(back_populates="cartas")
     
 
 class ProgramacoesCartas(SQLModel, table=True):
@@ -93,7 +93,7 @@ class ProgramacoesCartas(SQLModel, table=True):
     programacao_id : int = Field(foreign_key="programacoes_semanais.id", index=True)
     carta_id : int = Field(foreign_key="cartas.id", index=True)
 
-    programacao_semanal : ProgramacoesSemanais = Relationship(back_populates="programacao_cartas")
+    programacao_semanal : "ProgramacoesSemanais" = Relationship(back_populates="programacao_cartas")
     cartas : Cartas = Relationship(back_populates="programacao_cartas")
 
     respostas_cartas : list["RespostasCartas"] = Relationship(back_populates="programacao_cartas")
@@ -110,7 +110,7 @@ class AvaliacoesTerapeutas(SQLModel, table=True):
     resposta_id : int = Field(foreign_key="respostas_cartas.id")
     terapeuta_id : int = Field(foreign_key="perfis_terapeutas.id")
 
-    resposta : RespostasCartas = Relationship(back_populates="avaliacoes_terapeutas")
+    resposta : "RespostasCartas" = Relationship(back_populates="avaliacoes_terapeutas")
     terapeuta : PerfisTerapeutas = Relationship(back_populates="avaliacoes")
 
 class ProgramacoesSemanais(SQLModel, table=True):
