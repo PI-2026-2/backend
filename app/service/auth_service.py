@@ -1,20 +1,24 @@
+from __future__ import annotations
+
 from typing import Annotated, Tuple
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import select
+from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionDep
 from app.model.Usuario import InformacoesUsuarioLogin, UsuarioCadastro, UsuarioLogin
 from app.model.enums import TipoUsuarioEnum
 from app.model.tables import Usuarios
+from app.model.integration import PatientLink
 from dotenv import dotenv_values
 from pwdlib import PasswordHash
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
 import jwt
 
-config = dotenv_values()
+config = dotenv_values(".env")
 
 SECRET_KEY = config["SECRET_KEY"]
 assert SECRET_KEY != None
@@ -31,8 +35,7 @@ credentials_exception = HTTPException(
 
 class AuthService:
     def cadastrar(self, cadastro : UsuarioCadastro, session: SessionDep):
-        try:
-            usuario = Usuarios(
+        usuario = Usuarios(
                 nome=cadastro.nome,
                 telefone=cadastro.telefone,
                 data_nascimento=cadastro.data_nascimento,
@@ -41,12 +44,23 @@ class AuthService:
                 senha_hash= self.obter_hash_senha(cadastro.senha),
                 tipo=TipoUsuarioEnum(cadastro.tipo)
             )
-            session.add(usuario)
+        session.add(usuario)
+        try:
+            session.flush()
+            if cadastro.tipo == "PACIENTE" and cadastro.terapeuta_email:
+                therapist = session.exec(select(Usuarios).where(
+                    Usuarios.email == cadastro.terapeuta_email.strip().lower(),
+                    Usuarios.tipo == TipoUsuarioEnum.TERAPEUTA,
+                )).first()
+                if therapist is None:
+                    session.rollback()
+                    raise HTTPException(status_code=404, detail="Terapeuta não encontrado")
+                session.add(PatientLink(patient_id=usuario.id, therapist_id=therapist.id))
             session.commit()
-            session.refresh(usuario)
-        except Exception as e:
-            print(e)
-            return None
+        except IntegrityError:
+            session.rollback()
+            raise HTTPException(status_code=409, detail="E-mail já cadastrado")
+        session.refresh(usuario)
         return usuario
 
     async def login_obter_token(
@@ -66,6 +80,8 @@ class AuthService:
         return (
             Token(access_token=access_token, token_type="bearer"),
             InformacoesUsuarioLogin(
+                id=usuario.id,
+                email=usuario.email,
                 nome_completo=usuario.nome,
                 tipo_usuario=self.obter_tipo_usuario(usuario)
             )
@@ -93,16 +109,15 @@ class AuthService:
             email = payload.get("sub")
             if email is None:
                 raise credentials_exception
-            token_data = TokenData(email=email)
         except jwt.InvalidTokenError:
             raise credentials_exception
-        usuario = session.exec(select(Usuarios).where(Usuarios.email == email)).one()
+        usuario = session.exec(select(Usuarios).where(Usuarios.email == email)).first()
         if usuario is None:
             raise credentials_exception
         return usuario
 
     def autenticar_usuario(self, email: str, password: str, session : SessionDep):
-        usuario = session.exec(select(Usuarios).where(Usuarios.email == email)).one()
+        usuario = session.exec(select(Usuarios).where(Usuarios.email == email)).first()
         if usuario is None:
             raise credentials_exception
         if not self.verificar_senha(password, usuario.senha_hash):
@@ -110,14 +125,7 @@ class AuthService:
         return usuario
 
     def obter_tipo_usuario(self, usuario: Usuarios) -> TipoUsuarioEnum:
-        if usuario.terapeutas is not None and len(usuario.terapeutas) > 0:
-            return TipoUsuarioEnum.TERAPEUTA
-        else:
-            return TipoUsuarioEnum.PACIENTE
-        # elif usuario.pacientes is not None and len(usuario.pacientes) > 0:
-        #     return TipoUsuarioEnum.PACIENTE
-        # else:
-        #     raise Exception("O usuário não foi cadastrado corretamente")
+        return usuario.tipo
 
 
 class Token(BaseModel):
