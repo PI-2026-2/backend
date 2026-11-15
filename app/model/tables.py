@@ -26,7 +26,6 @@ class Usuarios(SQLModel, table=True):
 
     terapeutas : list["PerfisTerapeutas"] = Relationship(back_populates="usuario")
     pacientes : list["PerfisPacientes"] = Relationship(back_populates="usuario")
-    cartas_criadas : list["Cartas"] = Relationship(back_populates="usuario")
 
 class PerfisTerapeutas(SQLModel, table=True):
     __tablename__ = "perfis_terapeutas"
@@ -75,9 +74,6 @@ class Cartas(SQLModel, table=True):
     verso : str = Field()
     ativa : bool = Field(default=True)
     
-    criado_por_usuario_id : int = Field(foreign_key="usuarios.id")
-
-    usuario : Usuarios = Relationship(back_populates="cartas_criadas")
     baralho_id : int  = Field(foreign_key="baralhos.id", index=True)
     programacao_cartas : list["ProgramacoesCartas"] = Relationship(back_populates="cartas")
     baralho : "Baralhos" = Relationship(back_populates="cartas")

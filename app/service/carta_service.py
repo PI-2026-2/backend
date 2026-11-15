@@ -31,7 +31,6 @@ class CartaService:
         self,
         session: Session,
         caminho: str | Path,
-        criado_por_usuario_id: int,
     ) -> ResultadoImportacao:
         """
         Importa cartas de um CSV.
@@ -45,8 +44,6 @@ class CartaService:
         Tudo ou nada: se qualquer linha for inválida, nada é gravado.
         Reimportar o mesmo arquivo não duplica cartas.
         """
-        if session.get(Usuarios, criado_por_usuario_id) is None:
-            raise ValueError(f"Usuário {criado_por_usuario_id} não existe.")
 
         linhas = self._ler_csv(Path(caminho))
         resultado = ResultadoImportacao()
@@ -88,7 +85,6 @@ class CartaService:
                         frente=linha["subtheme"],
                         verso=linha["question"],
                         ativa=linha["active"],
-                        criado_por_usuario_id=criado_por_usuario_id,
                         baralho_id=baralho.id,
                     )
                 )
